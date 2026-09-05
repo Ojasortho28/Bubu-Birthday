@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Bubu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --plum-deep: #241226;
+    --plum: #341a3b;
+    --rose: #e88aa0;
+    --rose-soft: #f3b8c4;
+    --gold: #e8bf6d;
+    --lavender: #b79bd6;
+    --cream: #fdf3ec;
+    --paper: #fdf6ef;
+    --paper-shadow: #e8dccb;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    height:100%;
+    background: radial-gradient(ellipse at 50% 0%, var(--plum) 0%, var(--plum-deep) 55%, #150a17 100%);
+    color: var(--cream);
+    font-family: 'Quicksand', sans-serif;
+    overflow-x: hidden;
+  }
+
+  #sky{
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .star{
+    position:absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--cream);
+    border-radius: 50%;
+    opacity: 0.6;
+    animation: twinkle 3.5s ease-in-out infinite;
+  }
+
+  @keyframes twinkle{
+    0%, 100%{ opacity: 0.15; }
+    50%{ opacity: 0.9; }
+  }
+
+  .stage{
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .scene{
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    animation: fade-in 0.5s ease;
+  }
+
+  .scene.active{ display: flex; }
+
+  @keyframes fade-in{
+    from{ opacity: 0; transform: translateY(8px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  .hint{
+    margin-top: 26px;
+    font-size: 0.95rem;
+    color: var(--lavender);
+    opacity: 0.9;
+  }
+
+  /* ---------- ENVELOPE ---------- */
+  .envelope-wrap{
+    perspective: 1000px;
+    cursor: pointer;
+  }
+
+  .envelope{
+    position: relative;
+    width: 260px;
+    height: 170px;
+  }
+
+  .env-body{
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, #d9748c, var(--rose));
+    border-radius: 6px;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+  }
+
+  .env-pocket{
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 100%;
+    background: linear-gradient(135deg, #c8657d 49%, transparent 50%),
+                linear-gradient(-135deg, #c8657d 49%, transparent 50%);
+    background-size: 50% 100%;
+    background-position: left, right;
+    background-repeat: no-repeat;
+    border-radius: 6px;
+  }
+
+  .env-flap{
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 90px;
+    background: linear-gradient(135deg, var(--rose-soft), var(--rose));
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+    transform-origin: top center;
+    transform: rotateX(0deg);
+    transition: transform 0.7s cubic-bezier(.5,0,.2,1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    z-index: 3;
+  }
+
+  .envelope.opened .env-flap{
+    transform: rotateX(-165deg);
+  }
+
+  .env-seal{
+    position: absolute;
+    top: 60px; left: 50%;
+    width: 34px; height: 34px;
+    background: var(--gold);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    transition: opacity 0.3s ease;
+    z-index: 4;
+  }
+
+  .envelope.opened .env-seal{ opacity: 0; }
+
+  .env-letter-peek{
+    position: absolute;
+    left: 20px; right: 20px;
+    bottom: 30px;
+    height: 90px;
+    background: var(--paper);
+    border-radius: 3px;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.15);
+    transform: translateY(20px);
+    opacity: 0;
+    transition: transform 0.6s ease 0.4s, opacity 0.6s ease 0.4s;
+    z-index: 2;
+  }
+
+  .envelope.opened .env-letter-peek{
+    transform: translateY(-110px);
+    opacity: 1;
+  }
+
+  /* ---------- FOLDED LETTER ---------- */
+  .paper-wrap{
+    perspective: 1200px;
+  }
+
+  .paper{
+    width: 280px;
+    background: var(--paper);
+    border-radius: 4px;
+    box-shadow: 0 20px 45px rgba(0,0,0,0.4);
+    padding: 22px 22px 6px;
+    cursor: pointer;
+    position: relative;
+  }
+
+  .fold-panel{
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: rotateX(25deg);
+    transform-origin: top;
+    transition: max-height 0.8s ease, opacity 0.7s ease, transform 0.7s ease;
+    color: #3a2140;
+    font-size: 1rem;
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .fold-panel.open{
+    max-height: 400px;
+    opacity: 1;
+    transform: rotateX(0deg);
+  }
+
+  .fold-panel p{ margin: 0 0 14px; }
+
+  .crease{
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--paper-shadow) 20%, var(--paper-shadow) 80%, transparent);
+    margin: 4px 0 14px;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+  }
+
+  .crease.gone{ opacity: 0; }
+
+  .paper-corner{
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    color: var(--rose);
+    font-size: 1.15rem;
+    margin-bottom: 12px;
+  }
+
+  /* ---------- FINAL MESSAGE ---------- */
+  .final-card{
+    position: relative;
+    max-width: 560px;
+    background: rgba(253, 246, 239, 0.06);
+    border: 1px solid rgba(232, 191, 109, 0.25);
+    border-radius: 10px;
+    padding: 44px 32px;
+    backdrop-filter: blur(2px);
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+    animation: reveal-final 1s ease forwards;
+  }
+
+  @keyframes reveal-final{
+    to{ opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .final-heart{
+    font-size: 30px;
+    margin-bottom: 14px;
+    animation: pulse-heart 1.6s ease-in-out infinite;
+  }
+
+  .music-toggle{
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(232, 191, 109, 0.15);
+    border: 1px solid rgba(232, 191, 109, 0.4);
+    color: var(--gold);
+    font-family: 'Quicksand', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 7px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .music-toggle:hover{
+    background: rgba(232, 191, 109, 0.28);
+  }
+
+
+
+  @keyframes pulse-heart{
+    0%, 100%{ transform: scale(1); }
+    50%{ transform: scale(1.15); }
+  }
+
+  h1.final-title{
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    font-size: clamp(2rem, 6vw, 2.7rem);
+    margin: 0 0 22px;
+  }
+
+  .final-message{
+    font-size: 1.12rem;
+    line-height: 1.85;
+    color: #f7ecf1;
+    text-align: left;
+    white-space: pre-line;
+  }
+
+  .final-message strong{
+    color: var(--gold);
+  }
+
+  .final-signoff{
+    margin-top: 26px;
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.3rem;
+    color: var(--rose-soft);
+    text-align: right;
+  }
+
+  /* Ambient + burst hearts covering whole page */
+  .heart-layer{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+    overflow: hidden;
+  }
+
+  .flying-heart{
+    position: absolute;
+    top: -40px;
+    will-change: transform, opacity;
+  }
+
+  @media (max-width: 480px){
+    .envelope{ width: 220px; height: 145px; }
+    .paper{ width: 240px; }
+    .final-card{ padding: 32px 20px; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .env-flap, .fold-panel, .final-heart, .star{ transition: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+<div class="heart-layer" id="heartLayer"></div>
+
+<div class="stage">
+
+  <!-- SCENE 1: ENVELOPE -->
+  <div class="scene active" id="scene-envelope">
+    <div class="envelope-wrap" id="envelopeWrap">
+      <div class="envelope" id="envelope">
+        <div class="env-pocket"></div>
+        <div class="env-letter-peek"></div>
+        <div class="env-flap"></div>
+        <div class="env-seal">💌</div>
+      </div>
+    </div>
+    <p class="hint" id="envHint">tap the envelope, Bubu</p>
+  </div>
+
+  <!-- SCENE 2: FOLDED LETTER -->
+  <div class="scene" id="scene-paper">
+    <div class="paper-wrap">
+      <div class="paper" id="paper">
+        <div class="paper-corner">To my Bubu,</div>
+
+        <div class="fold-panel" id="fold1">
+          <p>Before you read any further...</p>
+          <p>this one's just for you.</p>
+        </div>
+        <div class="crease" id="crease1"></div>
+
+        <div class="fold-panel" id="fold2">
+          <p>A little more, keep going...</p>
+          <p>almost there, jaanu.</p>
+        </div>
+        <div class="crease" id="crease2"></div>
+
+        <div class="fold-panel" id="fold3">
+          <p>Okay. Deep breath.</p>
+          <p>Here it comes 💗</p>
+        </div>
+      </div>
+    </div>
+    <p class="hint" id="paperHint">unfold it, one crease at a time</p>
+  </div>
+
+  <!-- SCENE 3: FINAL MESSAGE -->
+  <div class="scene" id="scene-final">
+    <div class="final-card">
+      <button class="music-toggle" id="musicToggle" aria-label="Play song">🔇 tap for music</button>
+      <div class="final-heart">❤️</div>
+      <h1 class="final-title">Hi Bubu</h1>
+      <div class="final-message">I love you the most jaanu. You are the most <strong>beautiful, sexy and cutest</strong> lady out there. Thank God you chose me as your hubby. May god give you all the happiness in this world and you get an amazing life with me. I love you ❤️
+
+I love you the most ❤️</div>
+      <div class="final-signoff">Tumhara OJU</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="ytHolder" style="position:fixed; width:1px; height:1px; opacity:0; pointer-events:none; overflow:hidden;">
+  <iframe id="ytPlayer" width="200" height="113"
+    src="https://www.youtube.com/embed/LUgpPmj6nR8?enablejsapi=1&autoplay=0&controls=0"
+    title="Khat by Navjot Ahuja"
+    frameborder="0"
+    allow="autoplay; encrypted-media">
+  </iframe>
+</div>
+
+<script>
+  // Ambient stars
+  const sky = document.getElementById('sky');
+  for(let i=0;i<60;i++){
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random()*100 + '%';
+    s.style.top = Math.random()*60 + '%';
+    s.style.animationDelay = (Math.random()*3.5) + 's';
+    sky.appendChild(s);
+  }
+
+  const sceneEnvelope = document.getElementById('scene-envelope');
+  const scenePaper = document.getElementById('scene-paper');
+  const sceneFinal = document.getElementById('scene-final');
+
+  function switchScene(from, to){
+    from.classList.remove('active');
+    to.classList.add('active');
+  }
+
+  // --- Envelope interaction ---
+  const envelopeWrap = document.getElementById('envelopeWrap');
+  const envelope = document.getElementById('envelope');
+  const envHint = document.getElementById('envHint');
+  let envelopeOpened = false;
+
+  envelopeWrap.addEventListener('click', () => {
+    if(envelopeOpened) return;
+    envelopeOpened = true;
+    envelope.classList.add('opened');
+    envHint.style.opacity = '0';
+    setTimeout(() => {
+      switchScene(sceneEnvelope, scenePaper);
+    }, 1300);
+  });
+
+  // --- Folded letter interaction ---
+  const paper = document.getElementById('paper');
+  const paperHint = document.getElementById('paperHint');
+  const folds = [document.getElementById('fold1'), document.getElementById('fold2'), document.getElementById('fold3')];
+  const creases = [document.getElementById('crease1'), document.getElementById('crease2')];
+  let foldStep = 0;
+
+  const hintTexts = [
+    'unfold it, one crease at a time',
+    'a little more...',
+    'last one, jaanu'
+  ];
+
+  paper.addEventListener('click', () => {
+    if(foldStep >= folds.length) return;
+    folds[foldStep].classList.add('open');
+    if(creases[foldStep]) creases[foldStep].classList.add('gone');
+    foldStep++;
+
+    if(foldStep < folds.length){
+      paperHint.textContent = hintTexts[foldStep];
+    } else {
+      paperHint.style.opacity = '0';
+      setTimeout(() => {
+        switchScene(scenePaper, sceneFinal);
+        burstHearts();
+        startAmbientHearts();
+      }, 900);
+    }
+  });
+
+  // --- Hearts: big burst + gentle ambient rain after ---
+  // --- Song control (Khat by Navjot Ahuja, via official YouTube upload) ---
+  const ytFrame = document.getElementById('ytPlayer');
+  const musicToggle = document.getElementById('musicToggle');
+  let musicPlaying = false;
+
+  function ytCommand(func, args){
+    ytFrame.contentWindow.postMessage(JSON.stringify({ event: 'command', func, args: args || [] }), '*');
+  }
+
+  musicToggle.addEventListener('click', () => {
+    if(!musicPlaying){
+      ytCommand('unMute');
+      ytCommand('playVideo');
+      musicToggle.textContent = '🎵 pause song';
+      musicToggle.classList.add('playing');
+    } else {
+      ytCommand('pauseVideo');
+      musicToggle.textContent = '🔇 tap for music';
+      musicToggle.classList.remove('playing');
+    }
+    musicPlaying = !musicPlaying;
+  });
+
+  const heartLayer = document.getElementById('heartLayer');
+  const heartEmojis = ['❤️','💗','💕','💖','✨'];
+
+  function burstHearts(){
+    const count = 140;
+    for(let i=0;i<count;i++){
+      setTimeout(() => spawnHeart(true), i * 12);
+    }
+  }
+
+  let ambientInterval = null;
+  function startAmbientHearts(){
+    if(ambientInterval) return;
+    ambientInterval = setInterval(() => spawnHeart(false), 400);
+  }
+
+  function spawnHeart(isBurst){
+    const el = document.createElement('div');
+    el.className = 'flying-heart';
+    el.textContent = heartEmojis[Math.floor(Math.random()*heartEmojis.length)];
+    const size = isBurst ? (14 + Math.random()*22) : (14 + Math.random()*16);
+    el.style.fontSize = size + 'px';
+    const startX = Math.random()*100;
+    el.style.left = startX + 'vw';
+
+    const fallDistance = window.innerHeight + 80;
+    const drift = (Math.random()*160 - 80);
+    const rotate = (Math.random()*360 - 180);
+    const duration = isBurst ? (2.2 + Math.random()*1.8) : (5 + Math.random()*3);
+    const delay = isBurst ? Math.random()*0.3 : 0;
+
+    heartLayer.appendChild(el);
+
+    el.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 0 },
+      { transform: `translate(${drift*0.3}px, ${fallDistance*0.15}px) rotate(${rotate*0.3}deg)`, opacity: 1, offset: 0.15 },
+      { transform: `translate(${drift}px, ${fallDistance}px) rotate(${rotate}deg)`, opacity: 0 }
+    ], { duration: duration*1000, delay: delay*1000, easing: 'ease-in', fill: 'forwards' });
+
+    setTimeout(() => el.remove(), duration*1000 + delay*1000 + 100);
+  }
+</script>
+
+</body>
+</html>
